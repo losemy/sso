@@ -58,6 +58,7 @@ public class SSOFilter implements Filter {
             }
         // 验证token是否有效
         }else if (!JwtTokenUtil.isExpired(token)) {
+            //意味着token不能直接在url传
             token = request.getParameter(Constant.SSO_TOKEN_NAME);
             if(token != null){
                 // 刷新数据 重定向
@@ -75,6 +76,8 @@ public class SSOFilter implements Filter {
         if(backUrl !=null && backUrl.startsWith(Constant.BACK_URL)){
             return true;
         }
+
+        //通过代码测试覆盖率查看场景下是否代码走到 进行删除
         backUrl = (String) request.getAttribute(Constant.BACK_URL);
         if(StrUtil.isNotEmpty(backUrl)){
             request.setAttribute(Constant.BACK_URL,backUrl);
