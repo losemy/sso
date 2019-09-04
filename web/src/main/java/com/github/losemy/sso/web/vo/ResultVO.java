@@ -30,5 +30,9 @@ public class ResultVO<T extends Serializable> extends Convert {
      */
     private T data;
 
+    public ResultVO(){
+        this.respCode="000000";
+        this.respMsg="成功";
+    }
 
 }
