@@ -6,12 +6,18 @@ import com.github.losemy.sso.client.jwt.JwtTokenUtil;
 import com.github.losemy.sso.client.util.CookieUtils;
 import com.github.losemy.sso.dal.model.UserDO;
 import com.github.losemy.sso.service.UserService;
+import com.github.losemy.sso.service.dto.LoginDTO;
 import com.github.losemy.sso.service.dto.UserDTO;
+import com.github.losemy.sso.web.vo.ResultVO;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -39,6 +45,7 @@ public class LoginController {
 
     @GetMapping("/")
     public String index(HttpServletRequest request) {
+        //页面跳转
         String token = CookieUtils.getCookie(request, Constant.SSO_TOKEN_NAME);
         if (token == null || JwtTokenUtil.isExpired(token) ) {
             return "redirect:/login";
@@ -49,12 +56,14 @@ public class LoginController {
 
     @GetMapping("/getUserInfo")
     @ResponseBody
-    public User getUserInfo(@RequestParam("userToken") String userToken){
-        return JwtTokenUtil.getUser(userToken);
+    public ResultVO<User> getUserInfo(@RequestParam("userToken") String userToken){
+        ResultVO<User> result = new ResultVO<>();
+        result.setData(JwtTokenUtil.getUser(userToken));
+        return result;
     }
 
     @GetMapping("/login")
-    public String login(Model model,String backUrl, HttpServletRequest request) {
+    public String login(Model model,@RequestParam("backUrl") String backUrl, HttpServletRequest request) {
         // 需要base64 一下 避免？ get形式的参数无法被获取
         String token = CookieUtils.getCookie(request, Constant.SSO_TOKEN_NAME);
         if (StringUtils.isNotBlank(token) && !JwtTokenUtil.isExpired(token)) {
@@ -74,9 +83,10 @@ public class LoginController {
     }
 
     @PostMapping("/login")
-    public String login(String backUrl, UserDTO userDTO,
+    public String login(@Validated LoginDTO loginDTO,
             HttpServletRequest request, HttpServletResponse response) throws Exception {
-        UserDO user = userService.findByNameAndPassword(userDTO);
+        UserDO user = userService.findByNameAndPassword(loginDTO.convert(UserDTO.class));
+        String backUrl = loginDTO.getBackUrl();
         if(user == null){
             request.setAttribute("errorMessage", "用户不存在");
             return goLoginPath(backUrl, request);
@@ -87,7 +97,6 @@ public class LoginController {
             //或者存放在redis？
             if (StringUtils.isBlank(token) || JwtTokenUtil.isExpired(token)) {
                 token = JwtTokenUtil.generate(tokenUser);
-                System.out.println(token);
                 addTokenInCookie(token, request, response);
             }
 

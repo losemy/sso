@@ -1,5 +1,6 @@
 package com.github.losemy.sso.web.advice;
 
+import com.github.losemy.sso.client.exception.SSOException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -36,6 +37,13 @@ public class GlobalExceptionHandlerController {
     @ExceptionHandler(Exception.class)
     public void handleException(HttpServletResponse resp,Exception ex) throws Exception {
         String msg = ex.getMessage();
+        resp.sendError(HttpStatus.OK.value(),  msg);
+    }
+
+    @ExceptionHandler(SSOException.class)
+    public void handleSSOException(HttpServletResponse resp,Exception ex) throws Exception {
+        String msg = ex.getMessage();
+        //判断是否是ajax请求 给与不同处理？
         resp.sendError(HttpStatus.OK.value(),  msg);
     }
 

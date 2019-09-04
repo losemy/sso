@@ -1,6 +1,5 @@
 package com.github.losemy.sso.web.vo;
 
-import com.github.losemy.sso.util.convert.Convert;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -11,7 +10,7 @@ import java.io.Serializable;
  * @author lose
  */
 @Data
-public class ParamVO<T extends Serializable> extends Convert {
+public class ParamVO<T extends Serializable> implements Serializable{
     private static final long serialVersionUID = 1L;
 
     // 通用字段设计 方便调用传输
