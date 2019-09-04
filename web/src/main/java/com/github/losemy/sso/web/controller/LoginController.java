@@ -1,6 +1,7 @@
 package com.github.losemy.sso.web.controller;
 
 import com.github.losemy.sso.client.Constant;
+import com.github.losemy.sso.client.bean.User;
 import com.github.losemy.sso.client.jwt.JwtTokenUtil;
 import com.github.losemy.sso.client.util.CookieUtils;
 import com.github.losemy.sso.dal.model.UserDO;
@@ -10,19 +11,19 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
 /**
  * Description: sso
  * Created by lose on 2019/8/29 21:35
+ * todo 请求跟返回参数 规范化
+ * @author lose
  */
 @Controller
 public class LoginController {
@@ -44,6 +45,12 @@ public class LoginController {
         } else {
             return "index";
         }
+    }
+
+    @GetMapping("/getUserInfo")
+    @ResponseBody
+    public User getUserInfo(@RequestParam("userToken") String userToken){
+        return JwtTokenUtil.getUser(userToken);
     }
 
     @GetMapping("/login")
@@ -68,7 +75,7 @@ public class LoginController {
 
     @PostMapping("/login")
     public String login(String backUrl, UserDTO userDTO,
-            HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException {
+            HttpServletRequest request, HttpServletResponse response) throws Exception {
         UserDO user = userService.findByNameAndPassword(userDTO);
         if(user == null){
             request.setAttribute("errorMessage", "用户不存在");
@@ -76,8 +83,11 @@ public class LoginController {
         } else {
             String token = CookieUtils.getCookie(request, Constant.SSO_TOKEN_NAME);
             // 没有登录的情况
+            User tokenUser = user.convert(User.class);
+            //或者存放在redis？
             if (StringUtils.isBlank(token) || JwtTokenUtil.isExpired(token)) {
-                token = JwtTokenUtil.generate(user.getId());
+                token = JwtTokenUtil.generate(tokenUser);
+                System.out.println(token);
                 addTokenInCookie(token, request, response);
             }
 
